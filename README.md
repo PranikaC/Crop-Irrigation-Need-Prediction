@@ -1,55 +1,105 @@
 # Crop Irrigation Need Prediction
 
-![Python](https://img.shields.io/badge/Python-3.x-3776AB?style=flat&logo=python&logoColor=white)
-![Machine Learning](https://img.shields.io/badge/ML-Multiclass%20Classification-2E7D32?style=flat)
-![Optimization](https://img.shields.io/badge/Tuning-Optuna-6A1B9A?style=flat)
-![Explainability](https://img.shields.io/badge/Explainability-SHAP-E91E63?style=flat)
-![Notebook](https://img.shields.io/badge/Jupyter-Notebook-F37626?style=flat&logo=jupyter&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.x-blue)
+![LightGBM](https://img.shields.io/badge/LightGBM-Tuned%20with%20Optuna-orange)
+![Machine Learning](https://img.shields.io/badge/Machine%20Learning-Multiclass%20Classification-green)
+![Explainability](https://img.shields.io/badge/Explainability-SHAP-pink)
+![Status](https://img.shields.io/badge/Project-Completed-success)
+
+---
 
 ## Overview
 
-This project predicts crop irrigation need from agricultural, weather, and soil-related features. The notebook combines exploratory data analysis, feature engineering, cross-validation, model comparison, leaderboard-style scoring, and SHAP-based explainability.
+This project predicts crop irrigation need from agricultural, weather, and soil-related features using a tuned LightGBM classifier, with model behavior unpacked through SHAP explainability.
 
-The project is designed around a practical farming question: given current crop and environmental conditions, can a model estimate whether irrigation is needed?
+The workflow includes:
+- Exploratory data analysis with Sweetviz and summary tables
+- Agronomic feature engineering (water input, dryness index, evaporative stress, soil health)
+- Stratified cross-validation
+- Optuna-driven hyperparameter tuning
+- Multi-model leaderboard comparison
+- SHAP-based global and local explainability
 
-## Repository Contents
+The project demonstrates how gradient-boosting models, combined with domain-driven feature engineering and modern explainability tools, can be applied to agricultural decision support.
 
-| File | Description |
-| --- | --- |
-| `Crop-Irrigation-Need.ipynb` | Main notebook for EDA, feature engineering, model training, tuning, evaluation, and final comparison. |
-| `images/` | Exported plots used in this README. |
-| `README.md` | Project documentation. |
+---
 
-## Dataset
+## Project Workflow
 
-The notebook expects the following files in the project root:
+```mermaid
+flowchart TD
+    A[Raw Soil & Weather Data] --> B[EDA & Data Cleaning]
+    B --> C[Agronomic Feature Engineering]
+    C --> D[Categorical Encoding]
+    D --> E[Optuna Hyperparameter Tuning]
+    E --> F[Stratified Cross-Validation]
+    F --> G[Multi-Model Leaderboard]
+    G --> H[SHAP Explainability]
+    H --> I[Irrigation-Need Predictions]
+```
+
+---
+
+# Business Problem
+
+Farmers and agricultural planners need to decide when and how much to irrigate. Over-irrigation wastes water and stresses soil; under-irrigation reduces yield. A reliable irrigation-need classifier can support these decisions before manual inspection.
+
+Accurate irrigation-need models can support:
+- Field-level water-use planning
+- Drought-risk early warning
+- Soil-health and crop-rotation guidance
+- Precision-agriculture decision tools
+- Climate-adaptation research
+
+This project predicts whether irrigation is needed (and at what intensity) given current crop and environmental conditions.
+
+---
+
+# Dataset
+
+The project uses agricultural, weather, and soil-related features:
+
+- Crop attributes (`Crop_Growth_Stage`, mulching use)
+- Weather measurements (`Temperature_C`, `Humidity`, `Rainfall_mm`, `Wind_Speed_kmh`, `Sunlight_Hours`)
+- Soil chemistry (`Soil_pH`, `Organic_Carbon`, `Electrical_Conductivity`)
+- Soil moisture (`Soil_Moisture`) and prior actions (`Previous_Irrigation_mm`)
+- Categorical context (`Soil_Type`, `Season`)
+- Target column
+
+### Target Variable
+- `Irrigation_Need` — multiclass irrigation requirement label
+
+The notebook expects two files in the project root:
 
 | File | Purpose |
 | --- | --- |
-| `train.csv` | Training data with the target column `Irrigation_Need`. |
-| `test.csv` | Test data used for prediction or leaderboard-style scoring. |
+| `train.csv` | Training data with the `Irrigation_Need` target. |
+| `test.csv` | Test data for prediction or leaderboard-style scoring. |
 
-The training workflow separates features from the target:
+This is a multiclass classification problem.
 
-```python
-X = df_train.drop("Irrigation_Need", axis=1)
-y = df_train["Irrigation_Need"]
-```
+---
 
-## Workflow
+# Exploratory Data Analysis (EDA)
 
-1. Load training and test data.
-2. Generate EDA summaries with Sweetviz and custom tables.
-3. Review target distribution and feature types.
-4. Engineer agricultural summary features (water input, dryness index, evaporative stress, soil health, pH deviation, moisture-rain ratio, group-wise soil-moisture deviations).
-5. Clean numeric issues and encode categorical variables.
-6. Tune LightGBM with Optuna under stratified cross-validation.
-7. Train and compare multiple classification models.
-8. Inspect feature importance and SHAP explanations.
+### Key Insights
+- Soil moisture and recent rainfall dominate the raw signal for irrigation decisions
+- Temperature, sunlight hours, and humidity interact strongly — captured downstream in the engineered `Evaporative_Stress` feature
+- The mulching flag separates samples with very different downstream water-loss profiles
+- Class balance across `Irrigation_Need` categories is uneven enough to warrant stratified cross-validation
 
-## Feature Engineering
+---
 
-The notebook derives a small library of agronomic ratio features on top of the raw soil and weather columns:
+# Data Preprocessing
+
+The preprocessing workflow includes:
+
+- Numeric cleaning (handling unusual values)
+- Categorical encoding for `Soil_Type`, `Season`, `Crop_Growth_Stage`, and mulching use
+- Train/test splitting with stratification for cross-validation
+- Reusable feature-engineering transformations applied consistently to both splits
+
+### Engineered Features
 
 | Engineered Feature | Definition |
 | --- | --- |
@@ -62,25 +112,62 @@ The notebook derives a small library of agronomic ratio features on top of the r
 | `Moisture_Rain_Ratio` | `Soil_Moisture / (Rainfall_mm + 1)` |
 | Group-wise deviations | `Soil_Moisture` deviation from the mean within each `Soil_Type`, `Season`, and `Crop_Growth_Stage`. |
 
-## Modeling Approach
+The feature-engineering layer turns raw measurements into agronomic ratios that compress domain knowledge into single columns.
 
-| Model | Role in Project |
-| --- | --- |
-| LightGBM Classifier | Primary tuned model, optimized with Optuna under stratified CV. |
-| Gradient Boosting Classifier | Baseline boosted-tree model with feature engineering and tuning. |
-| CatBoost Classifier | Boosting model suited for categorical-heavy tabular data. |
-| Random Forest Classifier | Bagging-based tree ensemble comparison. |
-| Logistic Regression | Linear benchmark for comparison. |
+---
 
-## Results Summary
+# Modeling Approach
+
+The notebook compares several model families with LightGBM as the tuned primary learner.
+
+```mermaid
+flowchart LR
+    A[Engineered Features] --> B[Optuna Trials]
+    B --> C[Tuned LightGBM]
+    A --> D[Gradient Boosting]
+    A --> E[CatBoost]
+    A --> F[Random Forest]
+    A --> G[Logistic Regression]
+    C --> H[Leaderboard]
+    D --> H
+    E --> H
+    F --> H
+    G --> H
+    C --> I[SHAP Explainability]
+```
+
+### Training Configuration
+- Primary Model: LightGBM Classifier
+- Tuning: Optuna under stratified cross-validation
+- Loss: multiclass log loss
+- Comparison Models: Gradient Boosting, CatBoost, Random Forest, Logistic Regression
+
+---
+
+# Model Performance
 
 The notebook records the following leaderboard-style scores:
+
+### Evaluation Metrics
+- Accuracy
+- F1 score
+- `classification_report` per class
+- Permutation importance
+- SHAP values
+
+### Reported Results
 
 | Model | Score |
 | --- | ---: |
 | LightGBM | 0.96602 |
 | Gradient Boosting | 0.96098 |
 | CatBoost | 0.95787 |
+
+### Key Findings
+- LightGBM, tuned with Optuna, produced the highest leaderboard score
+- Gradient Boosting and CatBoost finished close behind, suggesting the signal is largely model-agnostic given the engineered features
+- Raw soil and weather measurements dominate feature importance, with engineered ratios reinforcing rather than replacing them
+- SHAP analysis aligns with agronomic intuition: high temperature and low soil moisture push the model toward predicting "High" irrigation need
 
 ### LightGBM Feature Importance
 
@@ -104,42 +191,78 @@ A waterfall plot decomposes one individual prediction. Each arrow shows how a si
 
 ![SHAP waterfall plot](images/shap-waterfall.png)
 
-Across both global and local views, soil moisture, temperature, crop-growth-stage moisture summaries, mulching use, and wind speed emerge as the most influential predictors.
+---
 
-## Tools Used
+# Model Interpretation
 
-| Category | Libraries |
-| --- | --- |
-| Data handling | `pandas`, `numpy` |
-| Visualization | `matplotlib`, `sweetviz`, `shap` |
-| Modeling | `scikit-learn`, `lightgbm`, `catboost` |
-| Tuning | `optuna`, stratified cross-validation |
-| Evaluation | `accuracy_score`, `f1_score`, `classification_report`, permutation importance, SHAP |
+The model demonstrates how a tuned gradient-boosting classifier, paired with SHAP explainability, can support agricultural decision-making in a transparent way.
 
-## How to Run
+Potential applications include:
+- Real-time field irrigation advisory tools
+- Drought-risk monitoring dashboards
+- Crop-rotation and soil-health planning
+- Climate-adaptation policy research
+- Educational examples of SHAP-based ML explainability
 
-1. Clone the repository.
-2. Add `train.csv` and `test.csv` to the repository root.
-3. Install the required libraries.
-4. Open and run `Crop-Irrigation-Need.ipynb`.
+---
+
+# Technologies Used
+
+- Python
+- pandas
+- NumPy
+- scikit-learn
+- LightGBM
+- CatBoost
+- Optuna
+- SHAP
+- Sweetviz
+- matplotlib
+- Jupyter Notebook
+
+---
+
+# Repository Structure
+
+```text
+crop-irrigation-need-prediction/
+│
+├── Crop-Irrigation-Need.ipynb
+├── images/
+│   ├── lgbm-feature-importance.png
+│   ├── shap-bar.png
+│   ├── shap-beeswarm.png
+│   └── shap-waterfall.png
+└── README.md
+```
+
+---
+
+# How to Run
+
+1. Clone the repository
+2. Add `train.csv` and `test.csv` to the repository root
+3. Install required dependencies
+4. Open the notebook in Jupyter Notebook or Google Colab
+5. Run all notebook cells sequentially
 
 ```bash
 pip install pandas numpy matplotlib sweetviz scikit-learn optuna lightgbm catboost shap
 ```
 
-## Data Note
+---
 
-The repository contains the notebook but not the CSV data files. The notebook will run after `train.csv` and `test.csv` are placed in the expected location.
+# Future Improvements
 
-## Future Improvements
+- Add `requirements.txt` for reproducible installation
+- Save generated reports and model-comparison charts in a `reports/` folder
+- Add a final prediction-export step for test-set submissions
+- Move feature engineering into reusable functions for easier experimentation
+- Add model cards explaining expected use and limitations
 
-- Add `requirements.txt` for reproducible installation.
-- Save generated reports and model-comparison charts in a `reports/` folder.
-- Add a final prediction export step for test-set submissions.
-- Move feature engineering into reusable functions for easier experimentation.
-- Add model cards explaining expected use and limitations.
+---
 
-## Author
+# Author
 
-Pranika Chandra  
-Data science and machine learning portfolio project.
+**Pranika Chandra**  
+Projects focused on machine learning, predictive analytics, agricultural data science, and explainable AI.
