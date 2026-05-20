@@ -84,7 +84,7 @@ This is a multiclass classification problem.
 
 # Exploratory Data Analysis (EDA)
 
-### Key Insights
+### Key Findings
 - Soil moisture and recent rainfall dominate the raw signal for irrigation decisions
 - Temperature, sunlight hours, and humidity interact strongly — captured downstream in the engineered `Evaporative_Stress` feature
 - The mulching flag separates samples with very different downstream water-loss profiles
