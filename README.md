@@ -199,7 +199,7 @@ A waterfall plot decomposes one individual prediction. Each arrow shows how a si
 
 ---
 
-# Model Interpretation
+# Demonstration & Applications
 
 The model demonstrates how a tuned gradient-boosting classifier, paired with SHAP explainability, can support agricultural decision-making in a transparent way.
 
