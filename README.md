@@ -124,25 +124,28 @@ The notebook compares several model families with LightGBM as the tuned primary 
 ```mermaid
 %%{init: {"theme": "default", "themeVariables": {"fontSize": "11px"}, "flowchart": {"nodeSpacing": 25, "rankSpacing": 30}}}%%
 flowchart LR
-    A[Engineered Features] --> B[Optuna Trials]
-    B --> C[Tuned LightGBM]
-    A --> D[Gradient Boosting]
-    A --> E[CatBoost]
-    A --> F[Random Forest]
-    A --> G[Logistic Regression]
-    C --> H[Leaderboard]
+    A[Engineered Features] --> B[Tuned Gradient Boosting]
+    A --> C[Tuned LightGBM]
+    A --> D[CatBoost]
+    A --> E[Random Forest]
+    B --> F[OOF Probabilities]
+    C --> F
+    D --> F
+    F --> G[Logistic Meta-Model Stacking]
+    B --> H[Leaderboard]
+    C --> H
     D --> H
     E --> H
-    F --> H
     G --> H
     C --> I[SHAP Explainability]
 ```
 
 ### Training Configuration
-- Primary Model: LightGBM Classifier
+- Primary Models: LightGBM and Gradient Boosting, both tuned with Optuna
 - Tuning: Optuna under 3-fold stratified cross-validation
 - Loss: multiclass log loss
-- Comparison Models: Gradient Boosting, CatBoost, Random Forest, Logistic Regression
+- Comparison Models: CatBoost, Random Forest
+- Stacking: Logistic Regression meta-model trained on OOF probabilities of LightGBM, Gradient Boosting, and CatBoost
 
 ---
 
@@ -166,8 +169,9 @@ The notebook records the following leaderboard-style scores:
 | CatBoost | 0.95787 |
 
 ### Key Findings
-- LightGBM, tuned with Optuna, produced the highest leaderboard score
+- LightGBM, tuned with Optuna, produced the highest individual leaderboard score
 - Gradient Boosting and CatBoost finished close behind, suggesting the signal is largely model-agnostic given the engineered features
+- A stacked Logistic Regression meta-model was tried on the OOF probabilities of LightGBM, Gradient Boosting, and CatBoost; the individual tuned LightGBM still won on leaderboard score
 - Raw soil and weather measurements dominate feature importance, with engineered ratios reinforcing rather than replacing them
 - SHAP analysis aligns with agronomic intuition: high temperature and low soil moisture push the model toward predicting "High" irrigation need
 
