@@ -27,6 +27,7 @@ The project demonstrates how gradient-boosting models, combined with domain-driv
 ## Project Workflow
 
 ```mermaid
+%%{init: {"theme": "default", "themeVariables": {"fontSize": "11px"}, "flowchart": {"nodeSpacing": 25, "rankSpacing": 30}}}%%
 flowchart TD
     A[Raw Soil & Weather Data] --> B[EDA & Data Cleaning]
     B --> C[Agronomic Feature Engineering]
@@ -59,11 +60,12 @@ This project predicts whether irrigation is needed (and at what intensity) given
 
 The project uses agricultural, weather, and soil-related features:
 
-- Crop attributes (`Crop_Growth_Stage`, mulching use)
+- Crop attributes (`Crop_Type`, `Crop_Growth_Stage`, `Mulching_Used`)
 - Weather measurements (`Temperature_C`, `Humidity`, `Rainfall_mm`, `Wind_Speed_kmh`, `Sunlight_Hours`)
 - Soil chemistry (`Soil_pH`, `Organic_Carbon`, `Electrical_Conductivity`)
 - Soil moisture (`Soil_Moisture`) and prior actions (`Previous_Irrigation_mm`)
-- Categorical context (`Soil_Type`, `Season`)
+- Categorical context (`Soil_Type`, `Season`, `Irrigation_Type`, `Water_Source`, `Region`)
+- Field size (`Field_Area_hectare`)
 - Target column
 
 ### Target Variable
@@ -95,7 +97,7 @@ This is a multiclass classification problem.
 The preprocessing workflow includes:
 
 - Numeric cleaning (handling unusual values)
-- Categorical encoding for `Soil_Type`, `Season`, `Crop_Growth_Stage`, and mulching use
+- Categorical encoding for `Soil_Type`, `Season`, `Crop_Growth_Stage`, and the mulching flag
 - Train/test splitting with stratification for cross-validation
 - Reusable feature-engineering transformations applied consistently to both splits
 
@@ -110,7 +112,6 @@ The preprocessing workflow includes:
 | `Moisture_Retention` | `Soil_Moisture * Organic_Carbon` |
 | `pH_Deviation` | `|Soil_pH − 6.5|` |
 | `Moisture_Rain_Ratio` | `Soil_Moisture / (Rainfall_mm + 1)` |
-| Group-wise deviations | `Soil_Moisture` deviation from the mean within each `Soil_Type`, `Season`, and `Crop_Growth_Stage`. |
 
 The feature-engineering layer turns raw measurements into agronomic ratios that compress domain knowledge into single columns.
 
@@ -121,6 +122,7 @@ The feature-engineering layer turns raw measurements into agronomic ratios that 
 The notebook compares several model families with LightGBM as the tuned primary learner.
 
 ```mermaid
+%%{init: {"theme": "default", "themeVariables": {"fontSize": "11px"}, "flowchart": {"nodeSpacing": 25, "rankSpacing": 30}}}%%
 flowchart LR
     A[Engineered Features] --> B[Optuna Trials]
     B --> C[Tuned LightGBM]
@@ -138,7 +140,7 @@ flowchart LR
 
 ### Training Configuration
 - Primary Model: LightGBM Classifier
-- Tuning: Optuna under stratified cross-validation
+- Tuning: Optuna under 3-fold stratified cross-validation
 - Loss: multiclass log loss
 - Comparison Models: Gradient Boosting, CatBoost, Random Forest, Logistic Regression
 
@@ -150,7 +152,7 @@ The notebook records the following leaderboard-style scores:
 
 ### Evaluation Metrics
 - Accuracy
-- F1 score
+- F1 score (weighted)
 - `classification_report` per class
 - Permutation importance
 - SHAP values
@@ -173,7 +175,7 @@ The notebook records the following leaderboard-style scores:
 
 The top-15 LightGBM importances surface the variables the tuned model relies on most. Raw weather and soil readings dominate, with engineered ratios such as `Moisture_Rain_Ratio` and `Total_Water_Input` appearing alongside them.
 
-![LightGBM top 15 feature importances](lgbm-feature-importance.png)
+<img src="lgbm-feature-importance.png" alt="LightGBM top 15 feature importances" width="500">
 
 ### SHAP Explainability for the "High" Class
 
@@ -181,15 +183,15 @@ Tree feature importance shows *which* variables the model uses, but not *how*. S
 
 The bar plot ranks features by mean absolute SHAP value — the average magnitude of each feature's contribution.
 
-![SHAP bar plot, mean absolute value](shap-bar.png)
+<img src="shap-bar.png" alt="SHAP bar plot, mean absolute value" width="500">
 
 The beeswarm plot shows the *direction* and *spread* of each feature's effect. High temperatures and low soil moisture push the model toward predicting "High" irrigation need, which matches the agronomic intuition.
 
-![SHAP beeswarm plot](shap-beeswarm.png)
+<img src="shap-beeswarm.png" alt="SHAP beeswarm plot" width="500">
 
 A waterfall plot decomposes one individual prediction. Each arrow shows how a single feature shifts the model output from the dataset baseline (`E[f(X)] = -10.25`) to the final value (`f(x) = -11.88`).
 
-![SHAP waterfall plot](shap-waterfall.png)
+<img src="shap-waterfall.png" alt="SHAP waterfall plot" width="500">
 
 ---
 
