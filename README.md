@@ -179,7 +179,7 @@ The notebook records the following leaderboard-style scores:
 
 The top-15 LightGBM importances surface the variables the tuned model relies on most. Raw weather and soil readings dominate, with engineered ratios such as `Moisture_Rain_Ratio` and `Total_Water_Input` appearing alongside them.
 
-<img src="lgbm-feature-importance.png" alt="LightGBM top 15 feature importances" width="500">
+<img src="images/lgbm-feature-importance.png" alt="LightGBM top 15 feature importances" width="500">
 
 ### SHAP Explainability for the "High" Class
 
@@ -187,15 +187,15 @@ Tree feature importance shows *which* variables the model uses, but not *how*. S
 
 The bar plot ranks features by mean absolute SHAP value — the average magnitude of each feature's contribution.
 
-<img src="shap-bar.png" alt="SHAP bar plot, mean absolute value" width="500">
+<img src="images/shap-bar.png" alt="SHAP bar plot, mean absolute value" width="500">
 
 The beeswarm plot shows the *direction* and *spread* of each feature's effect. High temperatures and low soil moisture push the model toward predicting "High" irrigation need, which matches the agronomic intuition.
 
-<img src="shap-beeswarm.png" alt="SHAP beeswarm plot" width="500">
+<img src="images/shap-beeswarm.png" alt="SHAP beeswarm plot" width="500">
 
 A waterfall plot decomposes one individual prediction. Each arrow shows how a single feature shifts the model output from the dataset baseline (`E[f(X)] = -10.25`) to the final value (`f(x) = -11.88`).
 
-<img src="shap-waterfall.png" alt="SHAP waterfall plot" width="500">
+<img src="images/shap-waterfall.png" alt="SHAP waterfall plot" width="500">
 
 ---
 
